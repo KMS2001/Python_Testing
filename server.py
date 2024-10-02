@@ -26,8 +26,17 @@ def index():
 
 @app.route('/showSummary',methods=['POST'])
 def showSummary():
-    club = [club for club in clubs if club['email'] == request.form['email']][0]
-    return render_template('welcome.html',club=club,competitions=competitions)
+    email = request.form.get('email')
+    if email:  # Pour vérifier si un email a été soumis
+        club = [club for club in clubs if club['email'] == email]
+        if not club:
+            flash('Veuillez entrer un email valide.', 'error')
+            return redirect(url_for('index'))  # Redirige vers la page d'accueil
+        club = club[0]
+        return render_template('welcome.html', club=club, competitions=competitions)
+    else:
+        flash('Veuillez entrer un email.', 'error')
+        return redirect(url_for('index'))  # Redirige vers la page d'accueil
 
 
 @app.route('/book/<competition>/<club>')
@@ -57,3 +66,8 @@ def purchasePlaces():
 @app.route('/logout')
 def logout():
     return redirect(url_for('index'))
+
+if __name__ == '__main__':
+    print("Starting server...")
+    app.run(debug=True)
+
