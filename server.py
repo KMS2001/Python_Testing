@@ -50,8 +50,8 @@ def purchasePlaces():
     try:
         placesRequired = int(request.form.get('places', 0))
     except ValueError:
-        flash("Erreur : Nombre de places invalide.")
-        return redirect(url_for('index'))
+        flash("Erreur !!!! Vous devez entrer un entier.")
+        return render_template('welcome.html', club=next((c for c in clubs if c['name'].lower() == club_name.lower()), None), competitions=competitions)
 
     competition = next((c for c in competitions if c['name'].lower() == competition_name.lower()), None)
     club = next((c for c in clubs if c['name'].lower() == club_name.lower()), None)
@@ -61,7 +61,7 @@ def purchasePlaces():
         return redirect(url_for('index'))
 
     if placesRequired <= 0:
-        flash("Erreur : Le nombre de places doit être supérieur à zéro.")
+        flash("Erreur : Vous avez entré un nombre négatif ou nul.")
     elif placesRequired > 12:
         flash('Erreur : Vous ne pouvez pas réserver plus de 12 places.')
     elif placesRequired > int(competition['numberOfPlaces']):
