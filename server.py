@@ -1,5 +1,6 @@
 import json
 from flask import Flask, render_template, request, redirect, flash, url_for
+from datetime import datetime
 
 # Chargement des données depuis les fichiers JSON
 def loadClubs():
@@ -8,13 +9,18 @@ def loadClubs():
 
 def loadCompetitions():
     with open('competitions.json') as comps:
-        return json.load(comps)['competitions']
+        listOfCompetitions = json.load(comps)['competitions']
+        # Convertir la date de chaque compétition en objet datetime
+        for comp in listOfCompetitions:
+            comp['date'] = datetime.strptime(comp['date'], '%Y-%m-%d %H:%M:%S')
+        return listOfCompetitions
 
 app = Flask(__name__)
 app.secret_key = 'something_special'
 
 competitions = loadCompetitions()
 clubs = loadClubs()
+current_date = datetime.now()
 
 @app.route('/')
 def index():
@@ -26,7 +32,7 @@ def showSummary():
     club = next((club for club in clubs if club['email'].lower() == email.lower()), None)
 
     if club:
-        return render_template('welcome.html', club=club, competitions=competitions)
+        return render_template('welcome.html', club=club, competitions=competitions, current_date=current_date)
     else:
         flash("Erreur : Le club correspondant à l'email n'a pas été trouvé.")
         return redirect(url_for('index'))
@@ -37,6 +43,10 @@ def book(competition, club):
     foundCompetition = next((c for c in competitions if c['name'].lower() == competition.lower()), None)
 
     if foundClub and foundCompetition:
+        # Vérifier si la compétition est déjà passée
+        if foundCompetition['date'] < current_date:
+            flash("Erreur : Cette compétition est déjà passée.")
+            return redirect(url_for('index'))
         return render_template('booking.html', club=foundClub, competition=foundCompetition)
     else:
         flash("Erreur : Club ou compétition introuvable.")
@@ -51,7 +61,7 @@ def purchasePlaces():
         placesRequired = int(request.form.get('places', 0))
     except ValueError:
         flash("Erreur !!!! Vous devez entrer un entier.")
-        return render_template('welcome.html', club=next((c for c in clubs if c['name'].lower() == club_name.lower()), None), competitions=competitions)
+        return render_template('welcome.html', club=next((c for c in clubs if c['name'].lower() == club_name.lower()), None), competitions=competitions, current_date=current_date)
 
     competition = next((c for c in competitions if c['name'].lower() == competition_name.lower()), None)
     club = next((c for c in clubs if c['name'].lower() == club_name.lower()), None)
@@ -60,10 +70,12 @@ def purchasePlaces():
         flash("Erreur : Club ou compétition introuvable.")
         return redirect(url_for('index'))
 
-    if placesRequired <= 0:
+    if competition['date'] < current_date:
+        flash("Erreur : Cette compétition est déjà passée.")
+    elif placesRequired <= 0:
         flash("Erreur : Vous avez entré un nombre négatif ou nul.")
     elif placesRequired > 12:
-        flash('Erreur : Vous ne pouvez pas réserver plus de 12 places.')
+        flash("Erreur : Vous ne pouvez pas réserver plus de 12 places.")
     elif placesRequired > int(competition['numberOfPlaces']):
         flash("Erreur : Pas assez de places disponibles.")
     elif placesRequired > int(club['points']):
@@ -71,9 +83,9 @@ def purchasePlaces():
     else:
         competition['numberOfPlaces'] = int(competition['numberOfPlaces']) - placesRequired
         club['points'] = int(club['points']) - placesRequired
-        flash('Réservation réussie !')
+        flash("Réservation réussie !")
 
-    return render_template('welcome.html', club=club, competitions=competitions)
+    return render_template('welcome.html', club=club, competitions=competitions, current_date=current_date)
 
 @app.route('/logout')
 def logout():
