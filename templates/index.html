@@ -7,10 +7,12 @@
 </head>
 <body>
     <h1>Welcome to the GUDLFT Registration Portal!</h1>
+
+    <!-- Formulaire pour entrer l'email -->
     <p>Please enter your secretary email to continue:</p>
-    <form action="showSummary" method="post">
+    <form action="{{ url_for('showSummary') }}" method="post">
         <label for="email">Email:</label>
-        <input type="email" name="email" id="email"/>
+        <input type="email" name="email" id="email" required/>
         <button type="submit">Enter</button>
     </form>
 
@@ -24,5 +26,18 @@
             </ul>
         {% endif %}
     {% endwith %}
+
+    <!-- Affichage des points et des compétitions si le club est trouvé -->
+    {% if club %}
+        <div>
+            <p class="points">Points available: {{ club['points'] }}</p>
+            <h3>Competitions:</h3>
+            <ul class="competitions">
+                {% for comp in competitions %}
+                    <li>{{ comp['name'] }} - Date: {{ comp['date'].strftime('%Y-%m-%d') }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
 </body>
 </html>

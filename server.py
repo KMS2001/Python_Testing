@@ -18,13 +18,14 @@ def loadCompetitions():
 app = Flask(__name__)
 app.secret_key = 'something_special'
 
+# Charger les données
 competitions = loadCompetitions()
 clubs = loadClubs()
 current_date = datetime.now()
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    return render_template('index.html', clubs=clubs)
 
 @app.route('/showSummary', methods=['POST'])
 def showSummary():
@@ -60,7 +61,7 @@ def purchasePlaces():
     try:
         placesRequired = int(request.form.get('places', 0))
     except ValueError:
-        flash("Erreur !!!! Vous devez entrer un entier.")
+        flash("Erreur : Vous devez entrer un entier.")
         return render_template('welcome.html', club=next((c for c in clubs if c['name'].lower() == club_name.lower()), None), competitions=competitions, current_date=current_date)
 
     competition = next((c for c in competitions if c['name'].lower() == competition_name.lower()), None)
@@ -92,4 +93,4 @@ def logout():
     return redirect(url_for('index'))
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True)  # Ajout du mode debug pour un développement plus facile.
